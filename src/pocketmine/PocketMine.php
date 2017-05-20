@@ -401,7 +401,7 @@ namespace pocketmine {
 	$errors = 0;
 
 	if(php_sapi_name() !== "cli"){
-		$logger->critical("You must run PocketMine-MP using the CLI.");
+		$logger->critical("You must run ImagicalMine using the CLI.");
 		++$errors;
 	}
 
@@ -421,10 +421,10 @@ namespace pocketmine {
 
 	if(extension_loaded("pocketmine")){
 		if(version_compare(phpversion("pocketmine"), "0.0.1") < 0){
-			$logger->critical("You have the native PocketMine extension, but your version is lower than 0.0.1.");
+			$logger->critical("You have the native ImagicalMine extension, but your version is lower than 0.0.1.");
 			++$errors;
 		}elseif(version_compare(phpversion("pocketmine"), "0.0.4") > 0){
-			$logger->critical("You have the native PocketMine extension, but your version is higher than 0.0.4.");
+			$logger->critical("You have the native ImagicalMine extension, but your version is higher than 0.0.4.");
 			++$errors;
 		}
 	}
@@ -433,7 +433,7 @@ namespace pocketmine {
 		$logger->warning("
 
 
-	You are running PocketMine with xdebug enabled. This has a major impact on performance.
+	You are running ImagicalMine with xdebug enabled. This has a major impact on performance.
 
 		");
 	}
@@ -492,7 +492,7 @@ namespace pocketmine {
 
 
 	if(\Phar::running(true) === ""){
-		$logger->warning("Non-packaged PocketMine-MP installation detected, do not use on production.");
+		$logger->warning("Non-packaged ImagicalMine-MP installation detected, do not use on production.");
 	}
 
 	ThreadManager::init();

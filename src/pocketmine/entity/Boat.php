@@ -1,5 +1,4 @@
 <?php
-
 /*
  *   ____  _            _      _       _     _
  *  |  _ \| |          | |    (_)     | |   | |
@@ -17,9 +16,7 @@
  * @author BlueLightJapan Team
  * 
 */
-
 namespace pocketmine\entity;
-
 use pocketmine\nbt\tag\ByteTag;
 use pocketmine\network\protocol\AddEntityPacket;
 use pocketmine\Player;
@@ -29,12 +26,9 @@ use pocketmine\network\protocol\EntityEventPacket;
 use pocketmine\item\Item as ItemItem;
 use pocketmine\level\Level;
 use pocketmine\nbt\tag\CompoundTag;
-
 class Boat extends Vehicle{
 	const NETWORK_ID = 90;
-
 	const DATA_WOOD_ID = 20;
-
 	public function __construct(Level $level, CompoundTag $nbt){
 		if(!isset($nbt->WoodID)){
 			$nbt->WoodID = new ByteTag("WoodID", 0);
@@ -42,11 +36,9 @@ class Boat extends Vehicle{
 		parent::__construct($level, $nbt);
 		$this->setDataProperty(Entity::DATA_VARIANT, self::DATA_TYPE_INT, $this->getWoodID());
 	}
-
 	public function getWoodID(){
 		return $this->namedtag["WoodID"];
 	}
-
 	public function spawnTo(Player $player){
 		$pk = new AddEntityPacket();
 		$pk->eid = $this->getId();
@@ -61,13 +53,10 @@ class Boat extends Vehicle{
 		$pk->pitch = 0;
 		$pk->metadata = $this->dataProperties;
 		$player->dataPacket($pk);
-
 		parent::spawnTo($player);
 	}
-
 	public function attack($damage, EntityDamageEvent $source){
 		parent::attack($damage, $source);
-
 		if(!$source->isCancelled()){
 			$pk = new EntityEventPacket();
 			$pk->eid = $this->id;
@@ -77,9 +66,7 @@ class Boat extends Vehicle{
 			}
 		}
 	}
-
 	public function goStraight($x,$y,$z){
-
 		$this->x = $x;
 		$this->y = $y;
 		$this->z = $z;
@@ -115,18 +102,15 @@ class Boat extends Vehicle{
 		$this->timings->stopTiming();
 		return $hasUpdate or !$this->onGround or abs($this->motionX) > 0.00001 or abs($this->motionY) > 0.00001 or abs($this->motionZ) > 0.00001;
 	}
-
 	public function getDrops(){
 		return [
 			ItemItem::get(ItemItem::BOAT,$this->getWoodID() , 1)
 		];
 	}
-
 	public function getSaveId(){
 		$class = new \ReflectionClass(static::class);
 		return $class->getShortName();
 	}
-
 	public function getRidePosition(){
 		return [0, 1, 0];
 	}

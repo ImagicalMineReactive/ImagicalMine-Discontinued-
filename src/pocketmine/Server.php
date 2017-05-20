@@ -105,6 +105,7 @@ use pocketmine\utils\TextFormat;
 use pocketmine\utils\Utils;
 use pocketmine\utils\UUID;
 use pocketmine\utils\VersionString;
+use pocketmine\katana\Katana;
 
 /**
  * The class that manages everything
@@ -198,6 +199,9 @@ class Server{
 
 	/** @var Network */
 	private $network;
+	
+	/** @var Katana */
+	private $katana;
 
 	private $networkCompressionAsync = true;
 	public $networkCompressionLevel = 7;
@@ -277,6 +281,13 @@ class Server{
 	public $mapEnabled = false;
 	public $entityAIEnabled = false;
 
+	/**
+	 *
+	 * @return mc3coreLib
+	 */
+	public function getKatana() {
+		return $this->katana;
+	}
 
 	/**
 	 * @return string
@@ -1425,6 +1436,8 @@ class Server{
 			$this->console = new CommandReader();
 
 			$version = new VersionString($this->getPocketMineVersion());
+			
+			$this->katana = new Katana($this);
 
 			$this->logger->info("Loading pocketmine.yml...");
 			if(!file_exists($this->dataPath . "pocketmine.yml")){
@@ -1488,20 +1501,6 @@ class Server{
 				"auto-save" => true,
 				"view-distance" => 8
 			]);
-						            $this->logger->info("
-§6┌─────────────────────────────────────────────────┐  §6-- Loaded: Properties and Configuration --
-§6│                                                 │    §cDate: §d$date
-§6│§b                                               §6│    §cVersion: §d$version §cCodename: §d$code
-§6│§b                                               §6│    §cMCPE: §d$mcpe §cProtocol: §d$protocol
-§6│§b      __ _  ___| |_                            §6│    §cIP: §d$ip §cPort: §d$port
-§6│§b     / _` |/ __| __|                           §6│    §cQuery: §d$query
-§6│§b    | (_| | (__| |_                            §6│    §cSSL Extension: §d$ssl
-§6│§b     \__,_|\___|\__|                           §6│    §cAuthentication: §d$mode
-§6│                                                 │  §6------------------------------------------
-§6│                                                 │    §cAPI Version: §d$api
-§6│§a Support: §bgithub.com/TesseractTeam/Tesseract   §6│    §cLanguage: 
-§6│					            │    §cPackage: §d$package
-§6└─────────────────────────────────────────────────┘  §6------------------------------------------");
 
 			date_default_timezone_set($this->getProperty("settings.timezone", "UTC"));
 			$this->forceLanguage = $this->getProperty("settings.force-language", false);

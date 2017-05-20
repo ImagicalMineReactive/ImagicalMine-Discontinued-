@@ -73,7 +73,7 @@ namespace pocketmine {
 	use pocketmine\wizard\SetupWizard;
 	use raklib\RakLib;
 
-	const VERSION = "1.0dev";
+	const VERSION = "1.1dev";
 	const API_VERSION = "3.0.0";
 	const CODENAME = "Xerus";
 	const MINECRAFT_VERSION = "v1.0.9 alpha";

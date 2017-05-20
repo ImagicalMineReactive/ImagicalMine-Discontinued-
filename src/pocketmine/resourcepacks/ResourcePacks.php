@@ -1,21 +1,27 @@
 <?php
 
 /*
- *   ____  _            _      _       _     _
- *  |  _ \| |          | |    (_)     | |   | |
- *  | |_) | |_   _  ___| |     _  __ _| |__ | |_
- *  |  _ <| | | | |/ _ \ |    | |/ _` | '_ \| __|
- *  | |_) | | |_| |  __/ |____| | (_| | | | | |_
- *  |____/|_|\__,_|\___|______|_|\__, |_| |_|\__|
- *                                __/ |
- *                               |___/
- * This program is free software: you can redistribute it and/or modify
+ *
+ *  _                       _           _ __  __ _
+ * (_)                     (_)         | |  \/  (_)
+ *  _ _ __ ___   __ _  __ _ _  ___ __ _| | \  / |_ _ __   ___
+ * | | '_ ` _ \ / _` |/ _` | |/ __/ _` | | |\/| | | '_ \ / _ \
+ * | | | | | | | (_| | (_| | | (_| (_| | | |  | | | | | |  __/
+ * |_|_| |_| |_|\__,_|\__, |_|\___\__,_|_|_|  |_|_|_| |_|\___|
+ *                     __/ |
+ *                    |___/
+ *
+ * This program is a third party build by ImagicalMine.
+ *
+ * PocketMine is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * @author BlueLightJapan Team
- * 
+ * @author ImagicalMine Team
+ * @link http://forums.imagicalmine.net/
+ *
+ *
 */
 
 namespace pocketmine\packs;

@@ -282,7 +282,7 @@ class Server{
 	 * @return string
 	 */
 	public function getName(){
-		return "PocketMine-MP-DerivedVersion";
+		return "ImagicalMine";
 	}
 
 	/**
@@ -1436,9 +1436,9 @@ class Server{
 			}
 			$this->config = new Config($this->dataPath . "pocketmine.yml", Config::YAML, []);
 
-			$this->logger->info("Loading bluelight.properties...");
+			$this->logger->info("Loading ImagicalMine.properties...");
 
-			$this->bluelightconfig = new Config($this->dataPath . "bluelight.properties", Config::PROPERTIES, [
+			$this->bluelightconfig = new Config($this->dataPath . "Imagicalmine.properties", Config::PROPERTIES, [
 				"CustomConfigVersion" => 1,
 				"DevTools" => true,
 				"CrashDump" => true,

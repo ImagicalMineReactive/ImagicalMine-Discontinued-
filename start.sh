@@ -32,9 +32,9 @@ fi
 
 if [ "$POCKETMINE_FILE" == "" ]; then
 	if [ -f ./BlueLight-PHP7.phar ]; then
-		POCKETMINE_FILE="./BlueLight-PHP7.phar"
+		POCKETMINE_FILE="./ImagicalMine.phar"
 	elif [ -f ./BlueLight*.phar ]; then
-	    	POCKETMINE_FILE="./BlueLight*.phar"
+	    	POCKETMINE_FILE="./ImagicalMine*.phar"
 	elif [ -f ./PocketMine-MP.phar ]; then
 		POCKETMINE_FILE="./PocketMine-MP.phar"
 	elif [ -f ./src/pocketmine/PocketMine.php ]; then

@@ -1491,15 +1491,15 @@ class Server{
 						            $this->logger->info("
 §6┌─────────────────────────────────────────────────┐  §6-- Loaded: Properties and Configuration --
 §6│                                                 │    §cDate: §d$date
-§6│§b   _______                                _      §6│    §cVersion: §d$version §cCodename: §d$code
-§6│§b  |__   __|                              | |     §6│    §cMCPE: §d$mcpe §cProtocol: §d$protocol
-§6│§b     | | ___  ___ ___  ___ _ __ __ _  ___| |_    §6│    §cIP: §d$ip §cPort: §d$port
-§6│§b     | |/ _ \/ __/ __|/ _ \ '__/ _` |/ __| __|   §6│    §cQuery: §d$query
-§6│§b     | |  __/\__ \__ \  __/ | | (_| | (__| |_    §6│    §cSSL Extension: §d$ssl
-§6│§b     |_|\___||___/___/\___|_|  \__,_|\___|\__|   §6│    §cAuthentication: §d$mode
+§6│§b                                               §6│    §cVersion: §d$version §cCodename: §d$code
+§6│§b                                               §6│    §cMCPE: §d$mcpe §cProtocol: §d$protocol
+§6│§b      __ _  ___| |_                            §6│    §cIP: §d$ip §cPort: §d$port
+§6│§b     / _` |/ __| __|                           §6│    §cQuery: §d$query
+§6│§b    | (_| | (__| |_                            §6│    §cSSL Extension: §d$ssl
+§6│§b     \__,_|\___|\__|                           §6│    §cAuthentication: §d$mode
 §6│                                                 │  §6------------------------------------------
 §6│                                                 │    §cAPI Version: §d$api
-§6│§a Support: §bgithub.com/TesseractTeam/Tesseract   §6│    §cLanguage: §d$lang
+§6│§a Support: §bgithub.com/TesseractTeam/Tesseract   §6│    §cLanguage: 
 §6│					            │    §cPackage: §d$package
 §6└─────────────────────────────────────────────────┘  §6------------------------------------------");
 

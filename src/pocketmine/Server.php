@@ -1439,15 +1439,15 @@ class Server{
 			
 			$this->katana = new Katana($this);
 
-			$this->logger->info("Loading pocketmine.yml...");
-			if(!file_exists($this->dataPath . "pocketmine.yml")){
-				$content = file_get_contents($this->filePath . "src/pocketmine/resources/pocketmine.yml");
+			$this->logger->info("Loading imagicalmine.yml...");
+			if(!file_exists($this->dataPath . "imagicalmine.yml")){
+				$content = file_get_contents($this->filePath . "src/pocketmine/resources/imagicalmine.yml");
 				if($version->isDev()){
 					$content = str_replace("preferred-channel: stable", "preferred-channel: beta", $content);
 				}
-				@file_put_contents($this->dataPath . "pocketmine.yml", $content);
+				@file_put_contents($this->dataPath . "imagicalmine.yml", $content);
 			}
-			$this->config = new Config($this->dataPath . "pocketmine.yml", Config::YAML, []);
+			$this->config = new Config($this->dataPath . "imagicalmine.yml", Config::YAML, []);
 
 			$this->logger->info("Loading ImagicalMine.properties...");
 
@@ -1539,8 +1539,8 @@ class Server{
 				}
 			}
 			if($this->devtools){
-				if(!file_exists($this->getPluginPath() . DIRECTORY_SEPARATOR . "BDevTools")){
-					@mkdir($this->getPluginPath() . DIRECTORY_SEPARATOR . "BDevTools");
+				if(!file_exists($this->getPluginPath() . DIRECTORY_SEPARATOR . "IMDevTools")){
+					@mkdir($this->getPluginPath() . DIRECTORY_SEPARATOR . "IMDevTools");
 				}
 			}
 

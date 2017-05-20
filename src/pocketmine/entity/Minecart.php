@@ -1,38 +1,39 @@
 <?php
 
 /*
- *   ____  _            _      _       _     _
- *  |  _ \| |          | |    (_)     | |   | |
- *  | |_) | |_   _  ___| |     _  __ _| |__ | |_
- *  |  _ <| | | | |/ _ \ |    | |/ _` | '_ \| __|
- *  | |_) | | |_| |  __/ |____| | (_| | | | | |_
- *  |____/|_|\__,_|\___|______|_|\__, |_| |_|\__|
- *                                __/ |
- *                               |___/
- * This program is free software: you can redistribute it and/or modify
+ *
+ *  _                       _           _ __  __ _
+ * (_)                     (_)         | |  \/  (_)
+ *  _ _ __ ___   __ _  __ _ _  ___ __ _| | \  / |_ _ __   ___
+ * | | '_ ` _ \ / _` |/ _` | |/ __/ _` | | |\/| | | '_ \ / _ \
+ * | | | | | | | (_| | (_| | | (_| (_| | | |  | | | | | |  __/
+ * |_|_| |_| |_|\__,_|\__, |_|\___\__,_|_|_|  |_|_|_| |_|\___|
+ *                     __/ |
+ *                    |___/
+ *
+ * This program is a third party build by ImagicalMine.
+ *
+ * PocketMine is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * @author BlueLightJapan Team
- * 
+ * @author ImagicalMine Team
+ * @link http://forums.imagicalmine.net/
+ *
+ *
 */
 
 namespace pocketmine\entity;
 
-use pocketmine\event\entity\EntityDamageEvent;
-use pocketmine\event\entity\EntityDamageByEntityEvent;
-use pocketmine\network\protocol\AddEntityPacket;
-use pocketmine\network\protocol\EntityEventPacket;
-use pocketmine\level\MovingObjectPosition;
-use pocketmine\math\Vector3;
-use pocketmine\block\Rail;
 use pocketmine\block\Block;
-use pocketmine\Server;
+use pocketmine\block\Rail;
+use pocketmine\math\Math;
+use pocketmine\math\Vector3;
+use pocketmine\network\protocol\AddEntityPacket;
 use pocketmine\Player;
 
 class Minecart extends Vehicle{
-
 	const NETWORK_ID = 84;
 
 	const TYPE_NORMAL = 1;
@@ -40,33 +41,437 @@ class Minecart extends Vehicle{
 	const TYPE_HOPPER = 3;
 	const TYPE_TNT = 4;
 
+	const STATE_INITIAL = 0;
+	const STATE_ON_RAIL = 1;
+	const STATE_OFF_RAIL = 2;
+
 	public $height = 0.7;
 	public $width = 0.98;
-	public $isInReverse = false;
-	public $matrix = [[[0, 0, -1], [0, 0, 1]], [[ -1, 0, 0], [1, 0, 0]], [[ -1, -1, 0], [1, 0, 0]], [[ -1, 0, 0], [1, -1, 0]], [[0, 0, -1], [0, -1, 1]], [[0, -1, -1], [0, 0, 1]], [[0, 0, 1], [1, 0, 0]], [[0, 0, 1], [ -1, 0, 0]], [[0, 0, -1], [ -1, 0, 0]], [[0, 0, -1], [1, 0, 0]]];
-	public $minecartX;
-	public $minecartY;
-	public $minecartZ;
-	public $minecartYaw;
-	public $minecraftPitch;
-	public $prevPosX;
-	public $prevPosY;
-	public $prevPosZ;
-	public $prevRotationYaw;
-	public $prevRotationPitch;
 
-	public function getName(){
+	public $drag = 0.1;
+	public $gravity = 0.5;
+
+	public $isMoving = false;
+	public $moveSpeed = 0.4;
+
+	private $state = Minecart::STATE_INITIAL;
+	private $direction = -1;
+	private $moveVector = [];
+	private $requestedPosition = null;
+
+	public function initEntity(){
+		$this->setMaxHealth(1);
+		$this->setHealth($this->getMaxHealth());
+		$this->moveVector[Entity::NORTH] = new Vector3(-1, 0, 0);
+		$this->moveVector[Entity::SOUTH] = new Vector3(1, 0, 0);
+		$this->moveVector[Entity::EAST] = new Vector3(0, 0, -1);
+		$this->moveVector[Entity::WEST] = new Vector3(0, 0, 1);
+		parent::initEntity();
+	}
+
+	public function getName() : string{
 		return "Minecart";
 	}
 
-	public function getType(){
+	public function getType() : int{
 		return self::TYPE_NORMAL;
+	}
+
+	public function onUpdate($currentTick){
+		if($this->closed !== false){
+			return false;
+		}
+
+		$tickDiff = $currentTick - $this->lastUpdate;
+		if($tickDiff <= 1){
+			return false;
+		}
+
+		$this->lastUpdate = $currentTick;
+
+		$this->timings->startTiming();
+
+		$hasUpdate = false;
+		//parent::onUpdate($currentTick);
+
+		if($this->isAlive()){
+			$p = $this->getLinkedEntity();
+			if($p instanceof Player){
+				if($this->state === Minecart::STATE_INITIAL){
+					$this->checkIfOnRail();
+				}elseif($this->state === Minecart::STATE_ON_RAIL){
+					$hasUpdate = $this->forwardOnRail($p);
+					$this->updateMovement();
+				}
+			}
+		}
+		$this->timings->stopTiming();
+
+		return $hasUpdate or !$this->onGround or abs($this->motionX) > 0.00001 or abs($this->motionY) > 0.00001 or abs($this->motionZ) > 0.00001;
+	}
+
+
+	/**
+	 * Check if minecart is currently on a rail and if so center the cart.
+	 */
+	private function checkIfOnRail(){
+		for($y = -1; $y !== 2 and $this->state === Minecart::STATE_INITIAL; $y++){
+			$positionToCheck = $this->temporalVector->setComponents($this->x, $this->y + $y, $this->z);
+			$block = $this->level->getBlock($positionToCheck);
+			if($this->isRail($block)){
+				$minecartPosition = $positionToCheck->floor()->add(0.5, 0, 0.5);
+				$this->setPosition($minecartPosition);    // Move minecart to center of rail
+				$this->state = Minecart::STATE_ON_RAIL;
+			}
+		}
+		if($this->state !== Minecart::STATE_ON_RAIL){
+			$this->state = Minecart::STATE_OFF_RAIL;
+		}
+	}
+
+	private function isRail(Block $rail){
+		return ($rail !== null and in_array($rail->getId(), [Block::RAIL, Block::ACTIVATOR_RAIL, Block::DETECTOR_RAIL, Block::POWERED_RAIL]));
+	}
+
+	private function getCurrentRail(){
+		$block = $this->getLevel()->getBlock($this);
+		if($this->isRail($block)){
+			return $block;
+		}
+		// Rail could be one block below descending down
+		$down = $this->temporalVector->setComponents($this->x, $this->y - 1, $this->z);
+		$block = $this->getLevel()->getBlock($down);
+		if($this->isRail($block)){
+			return $block;
+		}
+		return null;
+	}
+
+	/**
+	 * Attempt to move forward on rail given the direction the cart is already moving, or if not moving based
+	 * on the direction the player is looking.
+	 *
+	 * @param Player $player Player riding the minecart.
+	 *
+	 * @return boolean True if minecart moved, false otherwise.
+	 */
+	private function forwardOnRail(Player $player){
+		if($this->direction === -1){
+			$candidateDirection = $player->getDirection();
+		}else{
+			$candidateDirection = $this->direction;
+		}
+		$rail = $this->getCurrentRail();
+		if($rail !== null){
+			$railType = $rail->getDamage();
+			$nextDirection = $this->getDirectionToMove($railType, $candidateDirection);
+			if($nextDirection !== -1){
+				$this->direction = $nextDirection;
+				$moved = $this->checkForVertical($railType, $nextDirection);
+				if(!$moved){
+					return $this->moveIfRail();
+				}else{
+					return true;
+				}
+			}else{
+				$this->direction = -1;  // Was not able to determine direction to move, so wait for player to look in valid direction
+			}
+		}else{
+			// Not able to find rail
+			$this->state = Minecart::STATE_INITIAL;
+		}
+		return false;
+	}
+
+	/**
+	 * Determine the direction the minecart should move based on the candidate direction (current direction
+	 * minecart is moving, or the direction the player is looking) and the type of rail that the minecart is on.
+	 *
+	 * @param int $railType Type of rail the minecart is on.
+	 * @param int $candidateDirection Direction minecart already moving, or direction player looking.
+	 *
+	 * @return int The direction the minecart should move.
+	 */
+	private function getDirectionToMove($railType, $candidateDirection){
+		switch($railType){
+			case Rail::STRAIGHT_NORTH_SOUTH:
+			case Rail::SLOPED_ASCENDING_NORTH:
+			case Rail::SLOPED_ASCENDING_SOUTH:
+				switch($candidateDirection){
+					case Entity::NORTH:
+					case Entity::SOUTH:
+						return $candidateDirection;
+				}
+				break;
+			case Rail::STRAIGHT_EAST_WEST:
+			case Rail::SLOPED_ASCENDING_EAST:
+			case Rail::SLOPED_ASCENDING_WEST:
+				switch($candidateDirection){
+					case Entity::WEST:
+					case Entity::EAST:
+						return $candidateDirection;
+				}
+				break;
+			case Rail::CURVED_SOUTH_EAST:
+				switch($candidateDirection){
+					case Entity::SOUTH:
+					case Entity::EAST:
+						return $candidateDirection;
+					case Entity::NORTH:
+						return $this->checkForTurn($candidateDirection, Entity::EAST);
+					case Entity::WEST:
+						return $this->checkForTurn($candidateDirection, Entity::SOUTH);
+				}
+				break;
+			case Rail::CURVED_SOUTH_WEST:
+				switch($candidateDirection){
+					case Entity::SOUTH:
+					case Entity::WEST:
+						return $candidateDirection;
+					case Entity::NORTH:
+						return $this->checkForTurn($candidateDirection, Entity::WEST);
+					case Entity::EAST:
+						return $this->checkForTurn($candidateDirection, Entity::SOUTH);
+				}
+				break;
+			case Rail::CURVED_NORTH_WEST:
+				switch($candidateDirection){
+					case Entity::NORTH:
+					case Entity::WEST:
+						return $candidateDirection;
+					case Entity::SOUTH:
+						return $this->checkForTurn($candidateDirection, Entity::WEST);
+					case Entity::EAST:
+						return $this->checkForTurn($candidateDirection, Entity::NORTH);
+
+				}
+				break;
+			case Rail::CURVED_NORTH_EAST:
+				switch($candidateDirection){
+					case Entity::NORTH:
+					case Entity::EAST:
+						return $candidateDirection;
+					case Entity::SOUTH:
+						return $this->checkForTurn($candidateDirection, Entity::EAST);
+					case Entity::WEST:
+						return $this->checkForTurn($candidateDirection, Entity::NORTH);
+				}
+				break;
+		}
+		return -1;
+	}
+
+	/**
+	 * Need to alter direction on curves halfway through the turn and reset the minecart to be in the middle of
+	 * the rail again so as not to collide with nearby blocks.
+	 *
+	 * @param int $currentDirection Direction minecart currently moving
+	 * @param int $newDirection Direction minecart should turn once has hit the halfway point.
+	 *
+	 * @return int Either the current direction or the new direction depending on haw far across the rail the minecart is.
+	 */
+	private function checkForTurn($currentDirection, $newDirection){
+		switch($currentDirection){
+			case Entity::NORTH:
+				$diff = $this->x - $this->getFloorX();
+				if($diff !== 0 and $diff <= .5){
+					$dx = ($this->getFloorX() + .5) - $this->x;
+					$this->move($dx, 0, 0);
+					return $newDirection;
+				}
+				break;
+			case Entity::SOUTH:
+				$diff = $this->x - $this->getFloorX();
+				if($diff !== 0 and $diff >= .5){
+					$dx = ($this->getFloorX() + .5) - $this->x;
+					$this->move($dx, 0, 0);
+					return $newDirection;
+				}
+				break;
+			case Entity::EAST:
+				$diff = $this->z - $this->getFloorZ();
+				if($diff !== 0 and $diff <= .5){
+					$dz = ($this->getFloorZ() + .5) - $this->z;
+					$this->move(0, 0, $dz);
+					return $newDirection;
+				}
+				break;
+			case Entity::WEST:
+				$diff = $this->z - $this->getFloorZ();
+				if($diff !== 0 and $diff >= .5){
+					$dz = $dz = ($this->getFloorZ() + .5) - $this->z;
+					$this->move(0, 0, $dz);
+					return $newDirection;
+				}
+				break;
+		}
+		return $currentDirection;
+	}
+
+	private function checkForVertical($railType, $currentDirection){
+		switch($railType){
+			case Rail::SLOPED_ASCENDING_NORTH:
+				switch($currentDirection){
+					case Entity::NORTH:
+						// Headed north up
+						$diff = $this->x - $this->getFloorX();
+						if($diff !== 0 and $diff <= .5){
+							$dx = ($this->getFloorX() - .1) - $this->x;
+							$this->move($dx, 1, 0);
+							return true;
+						}
+						break;
+					case Entity::SOUTH:
+						// Headed south down
+						$diff = $this->x - $this->getFloorX();
+						if($diff !== 0 and $diff >= .5){
+							$dx = ($this->getFloorX() + 1) - $this->x;
+							$this->move($dx, -1, 0);
+							return true;
+						}
+						break;
+				}
+				break;
+			case Rail::SLOPED_ASCENDING_SOUTH:
+				switch($currentDirection){
+					case Entity::SOUTH:
+						// Headed south up
+						$diff = $this->x - $this->getFloorX();
+						if($diff !== 0 and $diff >= .5){
+							$dx = ($this->getFloorX() + 1) - $this->x;
+							$this->move($dx, 1, 0);
+							return true;
+						}
+						break;
+					case Entity::NORTH:
+						// Headed north down
+						$diff = $this->x - $this->getFloorX();
+						if($diff !== 0 and $diff <= .5){
+							$dx = ($this->getFloorX() - .1) - $this->x;
+							$this->move($dx, -1, 0);
+							return true;
+						}
+						break;
+				}
+				break;
+			case Rail::SLOPED_ASCENDING_EAST:
+				switch($currentDirection){
+					case Entity::EAST:
+						// Headed east up
+						$diff = $this->z - $this->getFloorZ();
+						if($diff !== 0 and $diff <= .5){
+							$dz = ($this->getFloorZ() - .1) - $this->z;
+							$this->move(0, 1, $dz);
+							return true;
+						}
+						break;
+					case Entity::WEST:
+						// Headed west down
+						$diff = $this->z - $this->getFloorZ();
+						if($diff !== 0 and $diff >= .5){
+							$dz = ($this->getFloorZ() + 1) - $this->z;
+							$this->move(0, -1, $dz);
+							return true;
+						}
+						break;
+				}
+				break;
+			case Rail::SLOPED_ASCENDING_WEST:
+				switch($currentDirection){
+					case Entity::WEST:
+						// Headed west up
+						$diff = $this->z - $this->getFloorZ();
+						if($diff !== 0 and $diff >= .5){
+							$dz = ($this->getFloorZ() + 1) - $this->z;
+							$this->move(0, 1, $dz);
+							return true;
+						}
+						break;
+					case Entity::EAST:
+						// Headed east down
+						$diff = $this->z - $this->getFloorZ();
+						if($diff !== 0 and $diff <= .5){
+							$dz = ($this->getFloorZ() - .1) - $this->z;
+							$this->move(0, -1, $dz);
+							return true;
+						}
+						break;
+				}
+				break;
+		}
+		return false;
+	}
+
+	/**
+	 * Move the minecart as long as it will still be moving on to another piece of rail.
+	 *
+	 * @return bool True if the minecart moved.
+	 */
+	private function moveIfRail(){
+		$nextMoveVector = $this->moveVector[$this->direction];
+		$nextMoveVector = $nextMoveVector->multiply($this->moveSpeed);
+		$newVector = $this->add($nextMoveVector->x, $nextMoveVector->y, $nextMoveVector->z);
+		$possibleRail = $this->getCurrentRail();
+		if(in_array($possibleRail->getId(), [Block::RAIL, Block::ACTIVATOR_RAIL, Block::DETECTOR_RAIL, Block::POWERED_RAIL])){
+			$this->moveUsingVector($newVector);
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Invoke the normal move code, but first need to convert the desired position vector into the
+	 * delta values from the current position.
+	 *
+	 * @param Vector3 $desiredPosition
+	 */
+	private function moveUsingVector(Vector3 $desiredPosition){
+		$dx = $desiredPosition->x - $this->x;
+		$dy = $desiredPosition->y - $this->y;
+		$dz = $desiredPosition->z - $this->z;
+		$this->move($dx, $dy, $dz);
+	}
+
+
+	/**
+	 * @return Rail
+	 */
+	public function getNearestRail(){
+		$minX = Math::floorFloat($this->boundingBox->minX);
+		$minY = Math::floorFloat($this->boundingBox->minY);
+		$minZ = Math::floorFloat($this->boundingBox->minZ);
+		$maxX = Math::ceilFloat($this->boundingBox->maxX);
+		$maxY = Math::ceilFloat($this->boundingBox->maxY);
+		$maxZ = Math::ceilFloat($this->boundingBox->maxZ);
+
+		$rails = [];
+
+		for($z = $minZ; $z <= $maxZ; ++$z){
+			for($x = $minX; $x <= $maxX; ++$x){
+				for($y = $minY; $y <= $maxY; ++$y){
+					$block = $this->level->getBlock($this->temporalVector->setComponents($x, $y, $z));
+					if(in_array($block->getId(), [Block::RAIL, Block::ACTIVATOR_RAIL, Block::DETECTOR_RAIL, Block::POWERED_RAIL])) $rails[] = $block;
+				}
+			}
+		}
+
+		$minDistance = PHP_INT_MAX;
+		$nearestRail = null;
+		foreach($rails as $rail){
+			$dis = $this->distance($rail);
+			if($dis < $minDistance){
+				$nearestRail = $rail;
+				$minDistance = $dis;
+			}
+		}
+		return $nearestRail;
 	}
 
 	public function spawnTo(Player $player){
 		$pk = new AddEntityPacket();
 		$pk->eid = $this->getId();
-		$pk->type = self::NETWORK_ID;
+		$pk->type = Minecart::NETWORK_ID;
 		$pk->x = $this->x;
 		$pk->y = $this->y;
 		$pk->z = $this->z;
@@ -81,428 +486,21 @@ class Minecart extends Vehicle{
 		parent::spawnTo($player);
 	}
 
-	public function onUpdate($currentTick){
-		if($this->closed){
-			return false;
-		}
-
-		$this->timings->startTiming();
-
-		$hasUpdate = parent::onUpdate($currentTick);
-		$this->prevPosX = $this->x;
-		$this->prevPosY = $this->y;
-		$this->prevPosZ = $this->z;
-		$this->motionY -= 0.03999999910593033;
-		$k = floor($this->x);
-		$l = floor($this->y);
-		$i1 = floor($this->z);
-
-		if($this->level->getBlock(new Vector3($k, $l - 1, $i1)) instanceof Rail){
-			$l--;
-		}
-
-		$blockpos = new Vector3($k, $l, $i1);
-		$block = $this->level->getBlock($blockpos);
-		if ($block instanceof Rail){
-			$this->onRail($blockpos, $block);
-		}else{
-			$this->moveDerailedMinecart();
-		}
-
-		$this->pitch = 0.0;
-		$d0 = $this->prevPosX - $this->x;
-		$d2 = $this->prevPosZ - $this->z;
-
-		if ($d0 * $d0 + $d2 * $d2 > 0.001){
-			$this->yaw = atan2($d2, $d0) * 180.0 / M_PI;
-
-			if ($this->isInReverse){
-				$this->yaw += 180.0;
-			}
-		}
-
-		$d3 = $this->wrapAngleTo180($this->yaw - $this->prevRotationYaw);
-
-		if ($d3 < -170.0 || $d3 >= 170.0){
-			$this->yaw += 180.0;
-			$this->isInReverse = !$this->isInReverse;
-		}
-
-		$this->setRotation($this->yaw, $this->pitch);
-
-		$bb = clone $this->getBoundingBox();
-		$list = $this->getLevel()->getCollidingEntities($bb->expand(0.20000000298023224, 0.0, 0.20000000298023224), $this);
-
-		foreach($list as $entity){
-			if($entity != $this->ridingEntity && $entity instanceof Minecart){
-				$this->applyEntityCollision($entity);
-			}
-		}
-
-		if ($this->ridingEntity != null && !$this->ridingEntity->isAlive()){
-			$this->ridingEntity = null;
-		}
-
-		$this->move($this->motionX, $this->motionY, $this->motionZ);
-		$this->updateMovement();
-
-		$this->timings->stopTiming();
-		return true;
-	}
-
-	public function onRail($blockpos, $block){
-		$this->fallDistance = 0.0;
-		$vec3 = $this->func_70489_a($this->x, $this->y, $this->z);
-		$this->y = $blockpos->getY();
-		$flag = false;
-		$flag1 = false;
-
-		if ($block->getId() == Block::POWERED_RAIL){
-			$flag = $block->getDamage() >= 8;
-			$flag1 = !$flag;
-		}
-
-		$d0 = 0.0078125;
-
-		$damage = $block->getDamage();
-		if ($block->getId() == Block::POWERED_RAIL && $block->isPowered()) $damage -= 8;
-		switch ($damage){
-			case Rail::SLOPED_ASCENDING_EAST:
-				$this->motionX -= 0.0078125;
-				$this->y++;
-				break;
-			case Rail::SLOPED_ASCENDING_WEST:
-				$this->motionX += 0.0078125;
-				$this->y++;
-				break;
-			case Rail::SLOPED_ASCENDING_NORTH:
-				$this->motionZ += 0.0078125;
-				$this->y++;
-				break;
-			case Rail::SLOPED_ASCENDING_SOUTH:
-				$this->motionZ -= 0.0078125;
-				$this->y++;
-		}
-
-		$aint = $this->matrix[$damage];
-		$d1 = $aint[1][0] - $aint[0][0];
-		$d2 = $aint[1][2] - $aint[0][2];
-		$d3 = sqrt($d1 * $d1 + $d2 * $d2);
-		$d4 = $this->motionX * $d1 + $this->motionZ * $d2;
-
-		if ($d4 < 0.0){
-			$d1 = -$d1;
-			$d2 = -$d2;
-		}
-
-		$d5 = sqrt($this->motionX * $this->motionX + $this->motionZ * $this->motionZ);
-
-		if ($d5 > 2.0){
-			$d5 = 2.0;
-		}
-
-		$this->motionX = $d5 * $d1 / $d3;
-		$this->motionZ = $d5 * $d2 / $d3;
-
-		if ($this->ridingEntity instanceof Entity){
-			$d6 = $this->ridingEntity->moveForward;
-			$this->ridingEntity->moveForward = 0;
-
-			if ($d6 > 0.0){
-				$d7 = -sin($this->ridingEntity->yaw * M_PI / 180.0);
-				$d8 = cos($this->ridingEntity->yaw * M_PI / 180.0);
-				$d9 = $this->motionX * $this->motionX + $this->motionZ * $this->motionZ;
-
-				if ($d9 < 0.01){
-					$this->motionX += $d7 * 0.1;
-					$this->motionZ += $d8 * 0.1;
-					$flag1 = false;
-				}
-			}
-		}
-
-		if ($flag1){
-			$d17 = sqrt($this->motionX * $this->motionX + $this->motionZ * $this->motionZ);
-
-			if ($d17 < 0.03){
-				$this->motionX *= 0.0;
-				$this->motionY *= 0.0;
-				$this->motionZ *= 0.0;
-			}else{
-				$this->motionX *= 0.5;
-				$this->motionY *= 0.0;
-				$this->motionZ *= 0.5;
-			}
-		}
-
-		$d18 = 0.0;
-		$d19 = $blockpos->getX() + 0.5 + $aint[0][0] * 0.5;
-		$d20 = $blockpos->getZ() + 0.5 + $aint[0][2] * 0.5;
-		$d21 = $blockpos->getX() + 0.5 + $aint[1][0] * 0.5;
-		$d10 = $blockpos->getZ() + 0.5 + $aint[1][2] * 0.5;
-		$d1 = $d21 - $d19;
-		$d2 = $d10 - $d20;
-
-		if ($d1 == 0.0){
-			$this->x = $blockpos->getX() + 0.5;
-			$d18 = $this->z - $blockpos->getZ();
-		}else if ($d2 == 0.0){
-			$this->z = $blockpos->getZ() + 0.5;
-			$d18 = $this->x - $blockpos->getX();
-		}else{
-			$d11 = $this->x - $d19;
-			$d12 = $this->z - $d20;
-			$d18 = ($d11 * $d1 + $d12 * $d2) * 2.0;
-		}
-
-		$this->x = $d19 + $d1 * $d18;
-		$this->z = $d20 + $d2 * $d18;
-		$this->setPosition(new Vector3($this->x, $this->y, $this->z));
-		$d22 = $this->motionX;
-		$d23 = $this->motionZ;
-
-		if ($this->ridingEntity != null){
-			$d22 *= 0.75;
-			$d23 *= 0.75;
-		}
-
-		$d13 = $this->getMaximumSpeed();
-		$d22 = $this->clamp($d22, -$d13, $d13);
-		$d23 = $this->clamp($d23, -$d13, $d13);
-		$this->move($d22, 0.0, $d23);
-
-		if ($aint[0][1] != 0 && floor($this->x) - $blockpos->getX() == $aint[0][0] && floor($this->z) - $blockpos->getZ() == $aint[0][2]){
-			$this->setPosition(new Vector3($this->x, $this->y + $aint[0][1], $this->z));
-		}else if ($aint[1][1] != 0 && floor($this->x) - $blockpos->getX() == $aint[1][0] && floor($this->z) - $blockpos->getZ() == $aint[1][2]){
-			$this->setPosition(new Vector3($this->x, $this->y + $aint[1][1], $this->z));
-		}
-
-		$this->applyDrag();
-		$vec31 = $this->func_70489_a($this->x, $this->y, $this->z);
-
-		if ($vec31 != null && $vec3 != null){
-			$d14 = ($vec3->y - $vec31->y) * 0.05;
-			$d5 = sqrt($this->motionX * $this->motionX + $this->motionZ * $this->motionZ);
-
-			if ($d5 > 0.0){
-				$this->motionX = $this->motionX / $d5 * ($d5 + $d14);
-				$this->motionZ = $this->motionZ / $d5 * ($d5 + $d14);
-			}
-
-			$this->setPosition(new Vector3($this->x, $vec31->y, $this->z));
-		}
-
-		$j = floor($this->x);
-		$i = floor($this->z);
-
-		if ($j != $blockpos->getX() || $i != $blockpos->getZ()){
-			$d5 = sqrt($this->motionX * $this->motionX + $this->motionZ * $this->motionZ);
-			$this->motionX = $d5 * ($j - $blockpos->getX());
-			$this->motionZ = $d5 * ($i - $blockpos->getZ());
-		}
-
-		if ($flag){
-			$d15 = sqrt($this->motionX * $this->motionX + $this->motionZ * $this->motionZ);
-
-			$damage = $block->getDamage();
-			if ($block->getId() == Block::POWERED_RAIL && $block->isPowered()) $damage -= 8;
-
-			if ($d15 > 0.01){
-				$d16 = 0.06;
-				$this->motionX += $this->motionX / $d15 * $d16;
-				$this->motionZ += $this->motionZ / $d15 * $d16;
-			}else if ($damage == Rail::STRAIGHT_EAST_WEST){
-				if ($this->level->getBlock($blockpos->getSide(Vector3::SIDE_WEST))->isSolid()){
-					$this->motionX = 0.02;
-				}else if ($this->level->getBlock($blockpos->getSide(Vector3::SIDE_EAST))->isSolid()){
-					$this->motionX = -0.02;
-				}
-			}else if ($damage == Rail::STRAIGHT_NORTH_SOUTH){
-				if ($this->level->getBlock($blockpos->getSide(Vector3::SIDE_NORTH))->isSolid()){
-					$this->motionZ = 0.02;
-				}else if ($this->level->getBlock($blockpos->getSide(Vector3::SIDE_SOUTH))->isSolid()){
-					$this->motionZ = -0.02;
-				}
-			}
-		}
-	}
-
-	public function func_70489_a($x, $y, $z){
-		$i = floor($x);
-		$j = floor($y);
-		$k = floor($z);
-
-		if($this->level->getBlock(new Vector3($i, $j - 1, $k)) instanceof Rail){
-			$j--;
-		}
-
-		$block = $this->level->getBlock(new Vector3($i, $j, $k));
-
-		if ($block instanceof Rail){
-
-			$damage = $block->getDamage();
-			if ($block->getId() == Block::POWERED_RAIL && $block->isPowered()) $damage -= 8;
-			$aint = $this->matrix[$damage];
-			$d0 = 0.0;
-			$d1 = $i + 0.5 + $aint[0][0] * 0.5;
-			$d2 = $j + 0.0625 + $aint[0][1] * 0.5;
-			$d3 = $k + 0.5 + $aint[0][2] * 0.5;
-			$d4 = $i + 0.5 + $aint[1][0] * 0.5;
-			$d5 = $j + 0.0625 + $aint[1][1] * 0.5;
-			$d6 = $k + 0.5 + $aint[1][2] * 0.5;
-			$d7 = $d4 - $d1;
-			$d8 = ($d5 - $d2) * 2.0;
-			$d9 = $d6 - $d3;
-
-			if ($d7 == 0.0){
-				$x = $i + 0.5;
-				$d0 = $z - $k;
-			}else if ($d9 == 0.0){
-				$z = $k + 0.5;
-				$d0 = $x - $i;
-			}else{
-				$d10 = $x - $d1;
-				$d11 = $z - $d3;
-				$d0 = ($d10 * $d7 + $d11 * $d9) * 2.0;
-			}
-
-			$x = $d1 + $d7 * $d0;
-			$y = $d2 + $d8 * $d0;
-			$z = $d3 + $d9 * $d0;
-
-			if ($d8 < 0.0){
-				$y++;
-			}
-
-			if ($d8 > 0.0){
-				$y += 0.5;
-			}
-
-			return new Vector3($x, $y, $z);
-		}else{
-			return null;
-		}
-	}
-
-	public function applyDrag(){
-		if ($this->ridingEntity != null){
-			$this->motionX *= 0.996999979019165;
-			$this->motionY *= 0.0;
-			$this->motionZ *= 0.996999979019165;
-		}else{
-			$this->motionX *= 0.9599999785423279;
-			$this->motionY *= 0.0;
-			$this->motionZ *= 0.9599999785423279;
-		}
-	}
-
-	public function getMaximumSpeed(){
-		return 0.4;
-	}
-
-	public function moveDerailedMinecart(){
-		$d0 = $this->getMaximumSpeed();
-		$this->motionX = $this->clamp($this->motionX, -$d0, $d0);
-		$this->motionZ = $this->clamp($this->motionZ, -$d0, $d0);
-
-		if ($this->onGround){
-			$this->motionX *= 0.5;
-			$this->motionY *= 0.5;
-			$this->motionZ *= 0.5;
-		}
-
-		$this->move($this->motionX, $this->motionY, $this->motionZ);
-
-		if (!$this->onGround){
-			$this->motionX *= 0.949999988079071;
-			$this->motionY *= 0.949999988079071;
-			$this->motionZ *= 0.949999988079071;
-		}
-	}
-
-	public function clamp($num, $min, $max){
-		return $num < $min ? $min : ($num > $max ? $max : $num);
-	}
-
-	public function applyEntityCollision($entityIn){
-		if ($entityIn != $this->ridingEntity){
-			if ($entityIn instanceof Living && !($entityIn instanceof Player) && !($entityIn instanceof IronGolem) && $this->getType() == self::TYPE_NORMAL && $this->motionX * $this->motionX + $this->motionZ * $this->motionZ > 0.01 && $this->ridingEntity == null && $entityIn->ridingEntity == null){
-				$entityIn->setLink($this);
- 			}
-
-			$d0 = $entityIn->x - $this->x;
-			$d1 = $entityIn->z - $this->z;
-			$d2 = $d0 * $d0 + $d1 * $d1;
-
-			if ($d2 >= 9.999999747378752E-5){
-				$d2 = sqrt($d2);
-				$d0 = $d0 / $d2;
-				$d1 = $d1 / $d2;
-				$d3 = 1.0 / $d2;
-
-				if ($d3 > 1.0){
-					$d3 = 1.0;
-				}
-
-				$d0 = $d0 * $d3;
-				$d1 = $d1 * $d3;
-				$d0 = $d0 * 0.10000000149011612;
-				$d1 = $d1 * 0.10000000149011612;
-				$d0 = $d0 * (1.0 - 0);
-				$d1 = $d1 * (1.0 - 0);
-				$d0 = $d0 * 0.5;
-				$d1 = $d1 * 0.5;
-
-				if ($entityIn instanceof Minecart){
-					$d4 = $entityIn->x - $this->x;
-					$d5 = $entityIn->z - $this->z;
-					$vec3 = (new Vector3($d4, 0.0, $d5))->normalize();
-					$vec31 = (new Vector3(cos($this->yaw * M_PI / 180.0), 0.0, sin($this->yaw * M_PI / 180.0)))->normalize();
-					$d6 = abs($vec3->dot($vec31));
-
-					if ($d6 < 0.800000011920929){
-						return;
-					}
-
- 					$d7 = $entityIn->motionX + $this->motionX;
-					$d8 = $entityIn->motionZ + $this->motionZ;
-					$d7 = $d7 / 2.0;
-					$d8 = $d8 / 2.0;
-					$this->motionX *= 0.20000000298023224;
-					$this->motionZ *= 0.20000000298023224;
-					$this->motionX += $d7 - $d0;
-					$this->motionZ += $d8 - $d1;
-					$entityIn->motionX *= 0.20000000298023224;
-					$entityIn->motionZ *= 0.20000000298023224;
-					$entityIn->motionX += $d7 + $d0;
-					$entityIn->motionZ += $d8 + $d1;
-				}else{
-					$this->motionX += -$d0;
-					$this->motionZ += -$d1;
-					$entityIn->motionX += $d0 / 4.0;
-					$entityIn->motionZ += $d1 / 4.0;
-				}
-			}
-		}
-	}
-
-	public function attack($damage, EntityDamageEvent $source){
+	/*public function attack($damage, EntityDamageEvent $source){
 		parent::attack($damage, $source);
-		if($source->isCancelled()) return false;
 
-		$flag = $source instanceof EntityDamageByEntityEvent && $source->getDamager() instanceof Player && $source->getDamager()->isCreative();
-		if($flag){
-			$this->kill();
-			$this->close();
-		}else{
-			//$pk = new EntityEventPacket();
-			//$pk->eid = $this->getId();
-			//$pk->event = EntityEventPacket::HURT_ANIMATION;
-			//Server::getInstance()->broadcastPacket($this->getViewers(), $pk);
+		if(!$source->isCancelled()){
+			$pk = new EntityEventPacket();
+			$pk->eid = $this->id;
+			$pk->event = EntityEventPacket::HURT_ANIMATION;
+			foreach($this->getLevel()->getPlayers() as $player){
+				$player->dataPacket($pk);
+			}
 		}
 	}
 
-	public function getRidePosition(){
-		return [0, 1, 0];
-	}
+	public function getSaveId(){
+		$class = new \ReflectionClass(static::class);
+		return $class->getShortName();
+	}*/
 }

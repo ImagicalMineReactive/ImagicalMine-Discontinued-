@@ -256,7 +256,7 @@ class Server{
 	/** @var Level */
 	private $levelDefault = null;
 
-	/** BlueLight Config */
+	/** ImagicalMine Config */
 	public $weatherEnabled = false;
  	public $weatherRandomDurationMin = 6000;
  	public $weatherRandomDurationMax = 12000;
@@ -1148,8 +1148,8 @@ class Server{
 	 */
 	public function getProperty($variable, $defaultValue = null){
 		if(!array_key_exists($variable, $this->propertyCache)){
-			if($this->bluelightconfig->exists($variable)){
-				return $this->getBlueLightProperty($variable,$defaultValue);
+			if($this->ImagicalMineconfig->exists($variable)){
+				return $this->getImagicalMineProperty($variable,$defaultValue);
 			}
 			$v = getopt("", ["$variable::"]);
 			if(isset($v[$variable])){
@@ -1168,8 +1168,8 @@ class Server{
 	 *
 	 * @return mixed
 	 */
-	private function getBlueLightProperty($variable,$defaultValue = true){
-		$v =  $this->bluelightconfig->get($variable);
+	private function getImagicalMineProperty($variable,$defaultValue = true){
+		$v =  $this->ImagicalMineconfig->get($variable);
 		return $v == null ? false : true;
 	}
 
@@ -1179,21 +1179,21 @@ class Server{
 	 *
 	 * @return int
 	 */
-	public function getBlueLightConfigInt($variable, $defaultValue = 0){
+	public function getImagicalMineConfigInt($variable, $defaultValue = 0){
 		$v = getopt("", ["$variable::"]);
 		if(isset($v[$variable])){
 			return (int) $v[$variable];
 		}
 
-		return $this->bluelightconfig->exists($variable) ? (int) $this->bluelightconfig->get($variable) : (int) $defaultValue;
+		return $this->ImagicalMineconfig->exists($variable) ? (int) $this->ImagicalMineconfig->get($variable) : (int) $defaultValue;
 	}
 
 	/**
 	 * @param string $variable
 	 * @param int    $value
 	 */
-	public function setBlueLightConfigInt($variable, $value){
-		$this->bluelightconfig->set($variable, (int) $value);
+	public function setImagicalMineConfigInt($variable, $value){
+		$this->ImagicalMineconfig->set($variable, (int) $value);
 	}
 
 	/**
@@ -1451,7 +1451,7 @@ class Server{
 
 			$this->logger->info("Loading ImagicalMine.properties...");
 
-			$this->bluelightconfig = new Config($this->dataPath . "Imagicalmine.properties", Config::PROPERTIES, [
+			$this->ImagicalMineconfig = new Config($this->dataPath . "Imagicalmine.properties", Config::PROPERTIES, [
 				"CustomConfigVersion" => 1,
 				"DevTools" => true,
 				"CrashDump" => true,
@@ -1517,12 +1517,12 @@ class Server{
 			$this->allowSplashPotion = $this->getProperty("allowSplashPotion", true);
 			$this->expEnabled = $this->getProperty("expEnabled", true);
 			$this->weatherEnabled = $this->getProperty("weatherEnabled", false);
-			$this->weatherRandomDurationMin = $this->getBlueLightConfigInt("weatherRandomDurationMin", 6000);
-			$this->weatherRandomDurationMax = $this->getBlueLightConfigInt("weatherRandomDurationMax", 12000);
+			$this->weatherRandomDurationMin = $this->getImagicalMineConfigInt("weatherRandomDurationMin", 6000);
+			$this->weatherRandomDurationMax = $this->getImagicalMineConfigInt("weatherRandomDurationMax", 12000);
 			$this->lightningTime = $this->getProperty("LightningTime", 200);
 			$this->lightningFire = $this->getProperty("LightningFire", false);
-			$this->hungerHealth = $this->getBlueLightConfigInt("HungerHealth", 10);
-			$this->hungerTimer = $this->getBlueLightConfigInt("HungerTimer", 80);
+			$this->hungerHealth = $this->getImagicalMineConfigInt("HungerHealth", 10);
+			$this->hungerTimer = $this->getImagicalMineConfigInt("HungerTimer", 80);
 			$this->destroyblockparticle = $this->getProperty("DestroyBlockParticle", true);
 			$this->keepInventory = $this->getProperty("KeepInventory", false);
 			$this->titletick = $this->getProperty("TitleTick", true);

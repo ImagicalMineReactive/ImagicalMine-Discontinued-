@@ -1,5 +1,4 @@
 <?php
-// import from clearsky/ci-test
 $time = time();
 $port = rand(1000,60000);
 while(system("lsof -i:".$port) != null){

@@ -1440,19 +1440,19 @@ class Server{
 			
 			$this->katana = new Katana($this);
 
-			$this->logger->info("Loading imagicalmine.yml...");
-			if(!file_exists($this->dataPath . "imagicalmine.yml")){
-				$content = file_get_contents($this->filePath . "src/pocketmine/resources/imagicalmine.yml");
+			$this->logger->info("Loading pocketmine.yml...");
+			if(!file_exists($this->dataPath . "pocketmine.yml")){
+				$content = file_get_contents($this->filePath . "src/pocketmine/resources/pocketmine.yml");
 				if($version->isDev()){
 					$content = str_replace("preferred-channel: stable", "preferred-channel: beta", $content);
 				}
-				@file_put_contents($this->dataPath . "imagicalmine.yml", $content);
+				@file_put_contents($this->dataPath . "pocketmine.yml", $content);
 			}
-			$this->config = new Config($this->dataPath . "imagicalmine.yml", Config::YAML, []);
+			$this->config = new Config($this->dataPath . "pocketmine.yml", Config::YAML, []);
 
 			$this->logger->info("Loading ImagicalMine.properties...");
 
-			$this->ImagicalMineconfig = new Config($this->dataPath . "Imagicalmine.properties", Config::PROPERTIES, [
+			$this->ImagicalMineconfig = new Config($this->dataPath . "imagicalmine.properties", Config::PROPERTIES, [
 				"CustomConfigVersion" => 1,
 				"DevTools" => true,
 				"CrashDump" => true,

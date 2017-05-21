@@ -29,6 +29,7 @@ use pocketmine\event\player\PlayerChatEvent;
 use pocketmine\command\CommandSender;
 use pocketmine\command\Command;
 use pocketmine\Player;
+use pocketmine\utils\Config;
 
 class InvisibleBedrock extends Transparent{
 
@@ -41,11 +42,9 @@ class InvisibleBedrock extends Transparent{
      * @param $key
      * @return null
      */
-    public function getConfigValue($key)
-    {
+    public function getConfigValue($key){
         $value = $this->getConfig()->getNested($key);
-        if($value === null)
-        {
+        if($value === null){
           
             return null;
         }

@@ -14,11 +14,11 @@ __Travis-CI Build:__<br>
 
 ## Notice
 
-**ImagicalMine is supported to Minecraft:PE 1.0.9 & [1.1.0 beta]
+**ImagicalMine is supported to Minecraft:PE 1.0.9 & [1.1.0 beta]**
 -------------
 ## Authors
 ##### **Original author**
 #####  *Keith*
 ##### **Reactivers (:D)**
-#####  *ondraczsk - <i>Maintainer</i>,  caspervanneck - <i>Developer</i> XxParkerGamesxX - Developer* 
+#####  *ondraczsk - <i>Maintainer</i>,  caspervanneck - <i>Developer</i>, XxParkerGamesxX - Developer* 
 

@@ -12,5 +12,5 @@ __Circle CI Builds__<br>
 ##### **Original author**
 #####  *Keith*
 ##### **Reactivers (:D)**
-#####  *ondraczsk - <i>Maintainer</i>,  caspervanneck - <i>Developer</i>* 
+#####  *ondraczsk - <i>Maintainer</i>,  caspervanneck - <i>Developer</i> XxParkerGamesxX - Developer* 
 

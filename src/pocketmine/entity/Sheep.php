@@ -21,7 +21,9 @@
  * @link http://forums.imagicalmine.net/
  *
  *
-*/amespace pocketmine\entity;
+*/
+
+namespace pocketmine\entity;
 
 use pocketmine\entity\Attribute;
 use pocketmine\entity\AI\EntityAIEatGrass;

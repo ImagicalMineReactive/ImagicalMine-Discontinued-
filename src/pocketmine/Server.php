@@ -1518,6 +1518,7 @@ class Server{
 			$this->foodEnabled = $this->getProperty("foodEnabled", true);
 			$this->allowSplashPotion = $this->getProperty("allowSplashPotion", true);
 			$this->expEnabled = $this->getProperty("expEnabled", true);
+			$this->invisBedrockBreakable = $this->getProperty("invisBedrockBreakable", false)
 			$this->weatherEnabled = $this->getProperty("weatherEnabled", false);
 			$this->weatherRandomDurationMin = $this->getImagicalMineConfigInt("weatherRandomDurationMin", 6000);
 			$this->weatherRandomDurationMax = $this->getImagicalMineConfigInt("weatherRandomDurationMax", 12000);

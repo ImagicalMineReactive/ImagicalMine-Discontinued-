@@ -22,6 +22,13 @@
 namespace pocketmine\block;
 
 use pocketmine\item\Item;
+use pocketmine\utils\TextFormat;
+use pocketmine\plugin\PluginBase;
+use pocketmine\event\Listener;
+use pocketmine\event\player\PlayerChatEvent;
+use pocketmine\command\CommandSender;
+use pocketmine\command\Command;
+use pocketmine\Player;
 
 class InvisibleBedrock extends Transparent{
 
@@ -30,6 +37,20 @@ class InvisibleBedrock extends Transparent{
 	public function __construct(){
 
 	}
+    /**
+     * @param $key
+     * @return null
+     */
+    public function getConfigValue($key)
+    {
+        $value = $this->getConfig()->getNested($key);
+        if($value === null)
+        {
+          
+            return null;
+        }
+        return $value;
+    }
 
 	public function getName() : string{
 		return "Invisible Bedrock";
@@ -44,7 +65,14 @@ class InvisibleBedrock extends Transparent{
 	}
 
 	public function isBreakable(Item $item){
-		return false;
-	}
+  if ($this->level->getServer()->InvisBedrockBreakable) {
+			           return false;
+					}else{
+				       return false;
+					}
+				}
+     }
+		
+	
 
-}
+

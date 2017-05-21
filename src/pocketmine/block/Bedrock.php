@@ -44,7 +44,11 @@ class Bedrock extends Solid{
 	}
 
 	public function isBreakable(Item $item){
-		return false;
+		  if ($this->level->getServer()->InvisBedrockBreakable) {
+			           return true;
+					}else{
+				       return false;
+					}
 	}
 
 }

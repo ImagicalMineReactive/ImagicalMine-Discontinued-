@@ -66,7 +66,7 @@ class InvisibleBedrock extends Transparent{
 
 	public function isBreakable(Item $item){
   if ($this->level->getServer()->InvisBedrockBreakable) {
-			           return false;
+			           return true;
 					}else{
 				       return false;
 					}

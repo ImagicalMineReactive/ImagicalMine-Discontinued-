@@ -546,7 +546,7 @@ class Player extends Human implements CommandSender, InventoryHolder, ChunkLoade
 	public function setBanned($value){
 		if($value === true){
 			$this->server->getNameBans()->addBan($this->getName(), null, null, null);
-			$this->kick("You have been banned");
+			$this->kick("You have been banned By Staff");
 		}else{
 			$this->server->getNameBans()->remove($this->getName());
 		}

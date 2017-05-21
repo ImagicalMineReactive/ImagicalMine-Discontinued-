@@ -4,6 +4,8 @@
 ## Builds
 __Circle CI Builds__<br>
 [![CircleCI](https://circleci.com/gh/circleci/mongofinil.svg?&style=shield&circle-token=6c7d65b8217d2d9ec065bcf04fd2437fdab577ba/)](https://circleci.com/gh/ImagicalMineReactive/ImagicalMine)
+__Travis CI Builds__<br>
+[![TravisCI](https://travis-ci.org/XxParkerGamesxX/ImagicalMine.svg?branch=master)
 ## About
 #### We are going to make new ImagicalMine
 #### Help us and make new ImagicalMine! 

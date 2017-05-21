@@ -8,6 +8,10 @@ __Travis CI Builds__<br>
 ## About
 #### We are going to make new ImagicalMine
 #### Help us and make new ImagicalMine! 
+
+## Notice
+
+**ImagicalMine is supported to Minecraft:PE 1.0.9 & [1.1.0 beta]
 -------------
 ## Authors
 ##### **Original author**

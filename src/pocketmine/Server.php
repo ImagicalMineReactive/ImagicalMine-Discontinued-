@@ -257,7 +257,6 @@ class Server{
 	private $levelDefault = null;
 
 	/** ImagicalMine Config */
-	public $invisBedrockBreakable = false;
 	public $weatherEnabled = false;
  	public $weatherRandomDurationMin = 6000;
  	public $weatherRandomDurationMax = 12000;
@@ -1458,7 +1457,6 @@ class Server{
 				"CrashDump" => true,
 				"FoodEnabled" => true,
 				"ExpEnabled" => false,
-				"InvisBedrockBreakable" => false,
 				"WeatherEnabled" => false,
 				"WeatherRandomDurationMin" => 6000,
 				"WeatherRandomDurationMan" => 12000,
@@ -1518,7 +1516,6 @@ class Server{
 			$this->foodEnabled = $this->getProperty("foodEnabled", true);
 			$this->allowSplashPotion = $this->getProperty("allowSplashPotion", true);
 			$this->expEnabled = $this->getProperty("expEnabled", true);
-			$this->invisBedrockBreakable = $this->getProperty("invisBedrockBreakable", false);
 			$this->weatherEnabled = $this->getProperty("weatherEnabled", false);
 			$this->weatherRandomDurationMin = $this->getImagicalMineConfigInt("weatherRandomDurationMin", 6000);
 			$this->weatherRandomDurationMax = $this->getImagicalMineConfigInt("weatherRandomDurationMax", 12000);

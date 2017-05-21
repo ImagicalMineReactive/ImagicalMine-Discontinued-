@@ -257,6 +257,7 @@ class Server{
 	private $levelDefault = null;
 
 	/** ImagicalMine Config */
+	public $invisBedrockBreakable = false;
 	public $weatherEnabled = false;
  	public $weatherRandomDurationMin = 6000;
  	public $weatherRandomDurationMax = 12000;
@@ -1457,6 +1458,7 @@ class Server{
 				"CrashDump" => true,
 				"FoodEnabled" => true,
 				"ExpEnabled" => false,
+				"InvisBedrockBreakable" => false,
 				"WeatherEnabled" => false,
 				"WeatherRandomDurationMin" => 6000,
 				"WeatherRandomDurationMan" => 12000,

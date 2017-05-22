@@ -30,6 +30,7 @@ class Katana
         $this->logger->info(Terminal::$COLOR_GOLD . "|" . Terminal::$COLOR_PURPLE . "                    |___/" . Terminal::$COLOR_GOLD . "                                                                |");
         $this->logger->info(Terminal::$COLOR_GOLD . "------------------------------------------------------------------------------------------- ");
         $this->logger->info(Terminal::$COLOR_PURPLE . "Imagical" . Terminal::$COLOR_AQUA . "Mine " . Terminal::$COLOR_WHITE . "is a third-party build of " . Terminal::$COLOR_AQUA . "PocketMine-MP" . Terminal::$COLOR_WHITE . ", distributed under the LGPL licence");
+        $this->logger->info(Terminal::$COLOR_PURPLE . "Imagical" . Terminal::$COLOR_AQUA . "Mine " . Terminal::$COLOR_WHITE . "Authors are " . Terminal::$COLOR_YELLOW . $this->server->getVersion() . Terminal::$COLOR_WHITE . ". I think, this you didn't know before.");
     }
 
     public function getServer()

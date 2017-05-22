@@ -295,6 +295,13 @@ class Server{
 	public function getName(){
 		return "ImagicalMine";
 	}
+	
+	/**
+	 * @return string
+	 */
+	public function getAuthors(){
+		return "Keith, ondraczsk, XxParkerGamesxX, caspervanneck";
+	}
 
 	/**
 	 * @return bool

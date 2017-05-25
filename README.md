@@ -1,6 +1,6 @@
 # Do you want to help? Write to our "issue" [HERE](https://github.com/ImagicalMineReactive/ImagicalMine/issues/3)
 ## TO DO
-- [ ] **Make ban log to databaze(mysql), can be editable via config
+- [ ] **Make ban log to database(mysql), can be editable via config
 -------------
 # ![ImagicalMine](http://i.imgur.com/6Hlm8mn.gif)
 ## Builds

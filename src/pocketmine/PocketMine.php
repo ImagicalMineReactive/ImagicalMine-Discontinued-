@@ -68,7 +68,7 @@ namespace {
 	}
 }
 
-namespace pocketmine {
+namespace imagicalmine {
 	use pocketmine\utils\Binary;
 	use pocketmine\utils\MainLogger;
 	use pocketmine\utils\ServerKiller;
@@ -91,8 +91,8 @@ namespace pocketmine {
 	 * Enjoy it as much as I did writing it. I don't want to do it again.
 	 */
 
-	if(\Phar::running(true) !== ""){
-		@define('pocketmine\PATH', \Phar::running(true) . "/");
+	if(\Phar::running(true) !== "false"){
+		@define('pocketmine\phar\imagicalmine', \Phar::running(true) . "/");
 	}else{
 		@define('pocketmine\PATH', \getcwd() . DIRECTORY_SEPARATOR);
 	}

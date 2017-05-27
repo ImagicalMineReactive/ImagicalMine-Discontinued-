@@ -77,12 +77,12 @@ namespace pocketmine {
 	use pocketmine\wizard\SetupWizard;
 	use raklib\RakLib;
 
-	const VERSION = "1.1dev";
+	const VERSION = "1.2dev";
 	const API_VERSION = "3.0.0";
 	const CODENAME = "Xerus";
 	const MINECRAFT_VERSION = "v1.0.9 alpha";
 	const MINECRAFT_VERSION_NETWORK = "1.0.9";
-	const IMAGICALMINE_VERSION = "1.0.0";
+	const IMAGICALMINE_VERSION = "2.0.1";
 
 	/*
 	 * Startup code. Do not look at it, it may harm you.

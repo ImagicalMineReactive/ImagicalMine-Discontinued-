@@ -414,6 +414,12 @@ class Player extends Human implements CommandSender, InventoryHolder, ChunkLoade
 			$this->getAttributeMap()->getAttribute(Attribute::EXPERIENCE_LEVEL)->setValue($this->expLevel, true, true);
 		}
 	}
+	
+	public function setXpProgress($count){
+		if(is_numeric($count){
+			$this->getAttribute(Attribute::EXPRERIENCE)->setValue($count);
+		}
+	}
 
 	public function linkHookToPlayer(FishingHook $entity){
 		if($entity->isAlive()){
